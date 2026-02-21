@@ -1,0 +1,5 @@
+dlt[bigquery,filesystem]>=1.4.0
+google-genai==1.63.0
+dbt-core==1.9.1
+pandas==2.2.3
+gcsfs>=2024.12.0

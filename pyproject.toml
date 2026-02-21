@@ -1,0 +1,10 @@
+[project]
+name = "my-dlt-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dbt-bigquery>=1.11.0",
+    "dlt[gcp,gs]>=1.21.0",
+]
