@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_breed_base
+    description: >
+      Wide intermediate model combining all staged breed fields with derived
+      metrics (life_span_category, is_family_friendly, weight_per_inch_lbs).
+      Single source of truth consumed by all mart models.
+
+  - name: int_breed_temperament_unnested
+    description: >
+      Unnested temperament tags from int_breed_base — one row per breed × trait,
+      normalised to lowercase. Feeds fct_breed_temperament in the marts layer.

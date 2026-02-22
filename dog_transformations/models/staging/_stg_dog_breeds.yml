@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_dog_breeds
+    description: >
+      Staged and normalised dog breed data. Parses raw string fields from the
+      Dog API bronze layer into typed columns and adds a size classification.
+    columns:
+      - name: breed_id
+        description: "Unique breed identifier (integer cast of Dog API id)"
+        tests:
+          - unique
+          - not_null
+
+      - name: breed_name
+        description: "Breed name"
+        tests:
+          - unique
+          - not_null
+
+      - name: life_span_min_years
+        description: "Lower bound of expected life span in years (null for ~19 breeds where the API provides no data)"
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: life_span_max_years
+        description: "Upper bound of expected life span in years (null for ~19 breeds where the API provides no data)"
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: life_span_avg_years
+        description: "Average of min/max life span in years (null for ~19 breeds where the API provides no data)"
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: weight_lbs_min
+        description: "Minimum weight in pounds (across sex variants where applicable)"
+
+      - name: weight_lbs_max
+        description: "Maximum weight in pounds (across sex variants where applicable)"
+
+      - name: size_class
+        description: "Size bucket derived from average imperial weight"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Toy', 'Small', 'Medium', 'Large', 'Giant']
+
+      - name: _dlt_id
+        description: "dlt internal unique record identifier"
+        tests:
+          - unique
+          - not_null

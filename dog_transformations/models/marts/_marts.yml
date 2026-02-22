@@ -1,0 +1,99 @@
+version: 2
+
+models:
+  - name: dim_breed
+    description: >
+      Breed dimension table. One row per breed with all descriptive attributes
+      normalised from the raw Dog API payload.
+    columns:
+      - name: breed_id
+        description: "Primary key — unique breed identifier"
+        tests:
+          - unique
+          - not_null
+
+      - name: breed_name
+        description: "Breed name"
+        tests:
+          - not_null
+
+      - name: size_class
+        description: "Size bucket: Toy / Small / Medium / Large / Giant"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Toy', 'Small', 'Medium', 'Large', 'Giant']
+
+      - name: life_span_avg_years
+        description: "Average expected life span in years (null for ~19 breeds where the API provides no data)"
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+  - name: fact_weight_life_span
+    description: >
+      Analytical fact table per breed with parsed weight, height, and life span
+      metrics plus derived flags for dashboard use.
+    columns:
+      - name: breed_id
+        description: "Primary key — unique breed identifier"
+        tests:
+          - unique
+          - not_null
+
+      - name: life_span_category
+        description: "Life span bucket for dashboard grouping"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Long (14+ yrs)', 'Average (11–13 yrs)', 'Short (< 11 yrs)']
+
+      - name: is_family_friendly
+        description: "True if temperament includes gentle / friendly / affectionate / patient / good-natured"
+        tests:
+          - not_null
+
+  - name: fct_breed_temperament
+    description: >
+      One row per breed × temperament trait (normalised to lowercase).
+      Enables top-trait analysis and family-friendly breed filtering.
+    columns:
+      - name: breed_id
+        description: "Breed identifier"
+        tests:
+          - not_null
+      - name: temperament_trait
+        description: "Individual normalised temperament trait"
+        tests:
+          - not_null
+
+  - name: fct_breed_group_summary
+    description: >
+      Aggregated stats per AKC breed group (groups with ≥3 breeds).
+    columns:
+      - name: breed_group
+        description: "AKC breed group name"
+        tests:
+          - unique
+          - not_null
+      - name: breed_count
+        description: "Number of breeds in this group"
+        tests:
+          - not_null
+
+  - name: fct_origin_summary
+    description: >
+      Aggregated breed stats by country of origin (origins with ≥2 breeds).
+    columns:
+      - name: origin
+        description: "Country or region of origin"
+        tests:
+          - unique
+          - not_null
+      - name: breed_count
+        description: "Number of breeds from this origin"
+        tests:
+          - not_null

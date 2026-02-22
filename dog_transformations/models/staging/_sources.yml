@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: "{{ var('gcp_project') }}"
+    schema: bronze
+    description: "Raw data loaded by the dlt pipeline from the Dog API"
+    tables:
+      - name: dog_api_raw
+        description: "One row per dog breed, loaded by dlt with schema-on-read. All fields are raw strings."
+        columns:
+          - name: id
+            description: "Unique breed ID from the Dog API"
+          - name: name
+            description: "Breed name"
+          - name: life_span
+            description: "Raw life span string, e.g. '10 - 12 years' or '8-13'"
+          - name: weight__imperial
+            description: "Raw imperial weight string, e.g. '35-50' or 'Male: 65-120; Female: 55-100'"
+          - name: weight__metric
+            description: "Raw metric weight string"
+          - name: height__imperial
+            description: "Raw imperial height string"
+          - name: height__metric
+            description: "Raw metric height string"
+          - name: temperament
+            description: "Comma-separated temperament traits"
+          - name: breed_group
+            description: "AKC breed group, e.g. Herding, Terrier, Toy"
+          - name: origin
+            description: "Country or region of origin"
+          - name: _dlt_load_id
+            description: "dlt internal load batch identifier"
+          - name: _dlt_id
+            description: "dlt internal unique record identifier"
