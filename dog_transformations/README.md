@@ -4,11 +4,11 @@ dbt project for the Dog Breed Explorer pipeline. Transforms raw data from the `b
 
 ## Model layers
 
-| Layer | Materialization | BigQuery dataset | Description |
-|---|---|---|---|
-| `staging` | view | `dev_staging` / `analytics_staging` | Light cleaning and type casting of raw dlt data |
-| `intermediate` | ephemeral | — (not written to DB) | Shared derived metrics and unnested structures |
-| `marts` | table | `dev` / `analytics` | Consumption-ready tables for dashboards |
+| Layer | Materialization | BigQuery dataset (dev) | BigQuery dataset (prod) | Description |
+|---|---|---|---|---|
+| `staging` (silver) | view | `dev_silver` | `silver` | Light cleaning and type casting of raw dlt data |
+| `intermediate` | ephemeral | — | — | Shared derived metrics and unnested structures |
+| `marts` (gold) | table | `dev_gold` | `gold` | Consumption-ready tables for dashboards |
 
 ## Mart models
 

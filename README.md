@@ -11,11 +11,11 @@
 Dog API → dlt pipeline → GCS (raw) → BigQuery bronze → dbt → BigQuery analytics
 ```
 
-| Layer | GCP Resource | dbt Dataset |
-|---|---|---|
-| Raw / Bronze | GCS bucket + BigQuery `bronze` | — |
-| Staging | — | `dev_staging` / `analytics_staging` |
-| Marts | — | `dev` / `analytics` |
+| Layer | GCP Resource | dbt Dataset (dev) | dbt Dataset (prod) |
+|---|---|---|---|
+| Bronze | GCS bucket + BigQuery `bronze` | — | — |
+| Silver | — | `dev_silver` | `silver` |
+| Gold | — | `dev_gold` | `gold` |
 
 Infrastructure is managed with Terraform. The ingestion pipeline runs as a Cloud Run Job triggered daily by Cloud Scheduler.
 

@@ -48,5 +48,5 @@ jobs:
       - name: Cleanup PR datasets
         if: always()
         run: |
-          bq rm -r -f ${{ env.GCP_PROJECT }}:dbt_ci_pr${{ github.event.pull_request.number }} || true
-          bq rm -r -f ${{ env.GCP_PROJECT }}:dbt_ci_pr${{ github.event.pull_request.number }}_staging || true
+          bq rm -r -f ${{ env.GCP_PROJECT }}:dbt_ci_pr${{ github.event.pull_request.number }}_silver || true
+          bq rm -r -f ${{ env.GCP_PROJECT }}:dbt_ci_pr${{ github.event.pull_request.number }}_gold || true

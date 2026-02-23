@@ -23,9 +23,9 @@ location   = "US"
 delete_contents_on_destroy = true
 }
 
-# 3. BigQuery Dataset for Transformed (Analytics) Data
-resource "google_bigquery_dataset" "analytics" {
-dataset_id = "analytics"
+# 3. BigQuery Dataset for Gold (Analytics) Data
+resource "google_bigquery_dataset" "gold" {
+dataset_id = "gold"
 location   = "US"
 delete_contents_on_destroy = true
 }

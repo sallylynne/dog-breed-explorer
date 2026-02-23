@@ -21,8 +21,9 @@ models:
   dog_transformations:
     staging:
       +materialized: view
-      +schema: staging
+      +schema: silver
     intermediate:
       +materialized: ephemeral
     marts:
       +materialized: table
+      +schema: gold
