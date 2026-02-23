@@ -8,3 +8,11 @@ dependencies = [
     "dbt-bigquery>=1.11.0",
     "dlt[gcp,gs]>=1.21.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
