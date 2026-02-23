@@ -1,12 +1,16 @@
 # Dog Breed Explorer — Data Engineering Case Study
 
 **Project ID:** sally-pyne-2026
+
 **Repository:** [sallylynne/dog-breed-explorer](https://github.com/sallylynne/dog-breed-explorer)
 
 ![CI](https://github.com/sallylynne/dog-breed-explorer/actions/workflows/ci.yml/badge.svg)
+
 ![CD](https://github.com/sallylynne/dog-breed-explorer/actions/workflows/cd.yml/badge.svg)
 
 **dbt docs:** https://sallylynne.github.io/dog-breed-explorer/
+
+**Dashboard:** https://lookerstudio.google.com/s/juYH956Ggv8
 
 ---
 
@@ -23,6 +27,16 @@ Dog API → dlt pipeline → GCS (raw) → BigQuery bronze → dbt → BigQuery 
 | Gold | — | `dev_gold` | `gold` |
 
 Infrastructure is managed with Terraform. The ingestion pipeline runs as a Cloud Run Job triggered daily by Cloud Scheduler.
+
+---
+
+## Pipeline Output
+
+### Bronze — raw ingestion (`bronze.dog_api_raw`)
+![BigQuery bronze table](docs/screenshots/biqquery-bronze.png)
+
+### CD — successful build
+![CD build](docs/screenshots/githhub-actions-cd-build.png)
 
 ---
 
@@ -112,6 +126,24 @@ Add a secret named **`GCP_SA_KEY`** in **Settings → Secrets and variables → 
 - Value: the full JSON contents of `gcp-key.json`
 
 This is the only manual step required after cloning the repo.
+
+---
+
+## Findings & Business Impact
+
+Analysis of 169 breeds from the Dog API reveals three insights for the Dog Breed Explorer product.
+
+**Longest-lived breeds skew small.** 
+The Rat Terrier leads with a predicted 15-year lifespan, followed by a cluster of smaller breeds (Miniature Poodle, Australian Cattle Dog, Australian Kelpie) at 14 years. The colour breakdown by size class shows that Toy and Small breeds dominate the longest-lived group — none of the top 15 are Giant breeds. Surfacing lifespan alongside size helps prospective owners set realistic expectations before bringing a dog home.
+
+**The registry is dominated by large and medium breeds.** 
+Large (53) and Medium (51) breeds together account for over 60% of the breeds catalogued, while Toy (21) and Giant (17) breeds are the smallest categories. This reflects the sheer variety of breeds that exist in the medium-to-large range, with Toy and Giant breeds representing more specialised ends of the size spectrum.
+
+**Intelligence and affection define the family-friendly profile.** 
+Among breeds flagged as family-friendly, "intelligent" is the most common temperament trait (88 breeds), followed by "affectionate" (61) and "friendly" (58). Loyalty and playfulness also feature strongly. Families want engaged, trainable companions as much as gentle ones. Since families represent the largest prospective owner segment, temperament data can drive personalised breed discovery and improve engagement with the explorer.
+
+**Next steps:** 
+Enriching the dataset with adoption availability and regional popularity data would unlock demand-side insights to complement the supply-side breed catalogue built here.
 
 ---
 
