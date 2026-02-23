@@ -1,0 +1,19 @@
+macros:
+  - name: generate_schema_name
+    description: >
+      Overrides dbt's default schema naming behaviour to implement clean medallion
+      layer names in production. In the prod target, models use their custom schema
+      directly (e.g. `silver`, `gold`). In all other targets (dev, ci), the custom
+      schema is prefixed with the target dataset to keep environments isolated
+      (e.g. `dev_silver`, `dbt_ci_pr42_gold`).
+    arguments:
+      - name: custom_schema_name
+        type: string
+        description: >
+          The custom schema set on the model via `+schema` in dbt_project.yml
+          (e.g. `silver` for staging models, `gold` for mart models).
+          If none is provided, the target's default dataset is used.
+      - name: node
+        type: node
+        description: The dbt node (model) being compiled. Not used directly but
+          required by dbt's macro interface.

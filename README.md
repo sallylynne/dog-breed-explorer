@@ -3,12 +3,17 @@
 **Project ID:** sally-pyne-2026
 **Repository:** [sallylynne/dog-breed-explorer](https://github.com/sallylynne/dog-breed-explorer)
 
+![CI](https://github.com/sallylynne/dog-breed-explorer/actions/workflows/ci.yml/badge.svg)
+![CD](https://github.com/sallylynne/dog-breed-explorer/actions/workflows/cd.yml/badge.svg)
+
+**dbt docs:** https://sallylynne.github.io/dog-breed-explorer/
+
 ---
 
 ## Architecture Overview
 
 ```
-Dog API → dlt pipeline → GCS (raw) → BigQuery bronze → dbt → BigQuery analytics
+Dog API → dlt pipeline → GCS (raw) → BigQuery bronze → dbt → BigQuery silver / gold
 ```
 
 | Layer | GCP Resource | dbt Dataset (dev) | dbt Dataset (prod) |
@@ -57,7 +62,7 @@ terraform init
 terraform apply
 ```
 
-This creates the GCS bucket, BigQuery datasets (`bronze`, `analytics`), Cloud Run Job, and Cloud Scheduler trigger.
+This creates the GCS bucket, BigQuery datasets (`bronze`, `gold`), Cloud Run Job, and Cloud Scheduler trigger.
 
 ### 5. Build and push the ingestion image
 
@@ -120,6 +125,9 @@ This is the only manual step required after cloning the repo.
 | `roles/bigquery.dataEditor` | Materialize tables in Bronze and Analytics |
 | `roles/bigquery.jobUser` | Execute BigQuery compute jobs |
 | `roles/run.invoker` | Allow Cloud Scheduler to trigger the Cloud Run Job |
-| `roles/cloudbuild.builds.editor` | Submit Cloud Build jobs (CI/CD image builds) |
+| `roles/artifactregistry.writer` | Push Docker images to Artifact Registry |
+| `roles/cloudbuild.builds.editor` | Submit Cloud Build jobs (manual ad-hoc builds) |
 | `roles/run.developer` | Update Cloud Run Job after image push |
+| `roles/iam.serviceAccountUser` (on itself) | Required to update the Cloud Run Job whose execution SA is itself |
+| `roles/serviceusage.serviceUsageConsumer` | Use GCP APIs via gcloud CLI |
 | `roles/secretmanager.secretAccessor` | Read the Dog API key from Secret Manager |

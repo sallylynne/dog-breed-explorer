@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+# Required for GitHub Pages deployment
+permissions:
+  contents: write
+
 env:
   GCP_PROJECT: sally-pyne-2026
   REGION: us-central1
@@ -59,3 +63,15 @@ jobs:
       - name: dbt test (prod)
         working-directory: dog_transformations
         run: dbt test --profiles-dir . --target prod
+
+      # Generate dbt docs and publish to GitHub Pages
+      - name: Generate dbt docs
+        working-directory: dog_transformations
+        run: dbt docs generate --profiles-dir . --target prod
+
+      - name: Deploy dbt docs to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dog_transformations/target
+          publish_branch: gh-pages
