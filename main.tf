@@ -38,6 +38,12 @@ deletion_protection = false
 
 depends_on = [google_secret_manager_secret_iam_member.pipeline_runner_secret_access]
 
+# The CD workflow updates the image tag after every push to main.
+# Ignoring the template block prevents terraform apply from reverting it.
+lifecycle {
+  ignore_changes = [template]
+}
+
 template {
 template {
   service_account = data.google_service_account.pipeline_runner.email
@@ -104,7 +110,43 @@ resource "google_secret_manager_secret_iam_member" "pipeline_runner_secret_acces
   member    = "serviceAccount:${data.google_service_account.pipeline_runner.email}"
 }
 
-# 9. Cloud Scheduler — uses data-pipeline-runner OIDC token to invoke the job
+# 11. IAM — allow data-pipeline-runner to submit Cloud Build jobs (CI/CD image builds)
+resource "google_project_iam_member" "pipeline_runner_cloudbuild_editor" {
+  project = "sally-pyne-2026"
+  role    = "roles/cloudbuild.builds.editor"
+  member  = "serviceAccount:${data.google_service_account.pipeline_runner.email}"
+}
+
+# 12. IAM — allow data-pipeline-runner to update Cloud Run jobs (CD deployment)
+resource "google_project_iam_member" "pipeline_runner_run_developer" {
+  project = "sally-pyne-2026"
+  role    = "roles/run.developer"
+  member  = "serviceAccount:${data.google_service_account.pipeline_runner.email}"
+}
+
+# 13. IAM — allow data-pipeline-runner to push images to Artifact Registry
+resource "google_project_iam_member" "pipeline_runner_artifactregistry_writer" {
+  project = "sally-pyne-2026"
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${data.google_service_account.pipeline_runner.email}"
+}
+
+# 14. IAM — allow data-pipeline-runner to act as itself when updating the Cloud Run Job
+# (required because the job's execution SA is data-pipeline-runner)
+resource "google_service_account_iam_member" "pipeline_runner_act_as_self" {
+  service_account_id = data.google_service_account.pipeline_runner.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${data.google_service_account.pipeline_runner.email}"
+}
+
+# 15. IAM — allow data-pipeline-runner to use GCP services (required for gcloud CLI)
+resource "google_project_iam_member" "pipeline_runner_service_usage_consumer" {
+  project = "sally-pyne-2026"
+  role    = "roles/serviceusage.serviceUsageConsumer"
+  member  = "serviceAccount:${data.google_service_account.pipeline_runner.email}"
+}
+
+# 14. Cloud Scheduler — uses data-pipeline-runner OIDC token to invoke the job
 resource "google_cloud_scheduler_job" "daily_sync" {
 name             = "dog-api-daily-sync"
 description      = "Triggers the dlt ingestion job"

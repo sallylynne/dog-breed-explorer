@@ -1,0 +1,52 @@
+name: CI — dbt run & test
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  GCP_PROJECT: sally-pyne-2026
+
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: dog_transformations
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Authenticates gcloud and sets up ADC so dbt (method: oauth) and bq CLI both work.
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt-bigquery
+        run: pip install dbt-bigquery==1.9.1
+
+      # Run models into an isolated dataset for this PR (e.g. dbt_ci_pr42).
+      # Staging models land in dbt_ci_pr42_staging; marts land in dbt_ci_pr42.
+      # Both datasets are deleted in the cleanup step regardless of outcome.
+      - name: dbt run
+        env:
+          DBT_DATASET: dbt_ci_pr${{ github.event.pull_request.number }}
+        run: dbt run --profiles-dir . --target ci
+
+      - name: dbt test
+        env:
+          DBT_DATASET: dbt_ci_pr${{ github.event.pull_request.number }}
+        run: dbt test --profiles-dir . --target ci
+
+      - name: Cleanup PR datasets
+        if: always()
+        run: |
+          bq rm -r -f ${{ env.GCP_PROJECT }}:dbt_ci_pr${{ github.event.pull_request.number }} || true
+          bq rm -r -f ${{ env.GCP_PROJECT }}:dbt_ci_pr${{ github.event.pull_request.number }}_staging || true

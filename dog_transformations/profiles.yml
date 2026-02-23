@@ -1,0 +1,34 @@
+# profiles.yml used by CI and CD workflows only.
+# Local development uses ~/.dbt/profiles.yml instead.
+#
+# Both targets use Application Default Credentials (oauth method) so no
+# keyfile path or JSON is stored here.  The calling workflow is responsible
+# for running google-github-actions/auth before invoking dbt.
+
+dog_transformations:
+  target: ci
+  outputs:
+
+    # ── CI: one isolated BigQuery dataset per pull request ───────────────────
+    ci:
+      type: bigquery
+      method: oauth
+      project: sally-pyne-2026
+      dataset: "{{ env_var('DBT_DATASET') }}"   # set by the workflow, e.g. dbt_ci_pr42
+      location: US
+      threads: 4
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      priority: interactive
+
+    # ── Prod: the live analytics dataset ─────────────────────────────────────
+    prod:
+      type: bigquery
+      method: oauth
+      project: sally-pyne-2026
+      dataset: analytics
+      location: US
+      threads: 4
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      priority: interactive

@@ -1,50 +1,125 @@
-# DOG API CASE STUDY README
+# Dog Breed Explorer — Data Engineering Case Study
 
-Project ID: sally-pyne-2026
+**Project ID:** sally-pyne-2026
+**Repository:** [sallylynne/dog-breed-explorer](https://github.com/sallylynne/dog-breed-explorer)
 
-Repository Link: [sally-pyne](https://github.com/sallylynne/sally-pyne)
+---
 
-## TASK 1: ENVIRONMENT & REPOSITORY
+## Architecture Overview
 
-1. Project Initialization
-    - GCP Setup: Created project sally-pyne-2026 and enabled core APIs (BigQuery, Cloud Storage, IAM, and Cloud Scheduler).
+```
+Dog API → dlt pipeline → GCS (raw) → BigQuery bronze → dbt → BigQuery analytics
+```
 
-    - Dependency Management: Utilized uv for a high-performance, reproducible Python environment.
+| Layer | GCP Resource | dbt Dataset |
+|---|---|---|
+| Raw / Bronze | GCS bucket + BigQuery `bronze` | — |
+| Staging | — | `dev_staging` / `analytics_staging` |
+| Marts | — | `dev` / `analytics` |
 
-    - Compatibility: Pinned the project to Python 3.12 to ensure stable serialization for dbt-core and its dependencies.
+Infrastructure is managed with Terraform. The ingestion pipeline runs as a Cloud Run Job triggered daily by Cloud Scheduler.
 
-2. Infrastructure & Security (Least-Privilege)
+---
 
-    - Service Account: Provisioned data-pipeline-runner@sally-pyne-2026.iam.gserviceaccount.com.
+## Bootstrap Instructions
 
-    - Granular RBAC: Assigned the following roles to satisfy security requirements:
-        - roles/storage.objectAdmin: To manage the GCS staging area.
-        - roles/bigquery.dataEditor: To materialize tables in the Bronze and Analytics layers.
-        - roles/bigquery.jobUser: To execute compute workloads.
+### Prerequisites
+- GCP project with billing enabled
+- `gcloud` CLI authenticated (`gcloud auth login`)
+- `terraform` CLI installed
+- `uv` Python package manager
 
-3. Deploy Infrastructure        
-    - deploy python job
-    	`gcloud run jobs deploy dog-ingestion-job --source . --region us-central1`
-    - build terraform
-    	`terraform apply`
+### 1. Clone the repo
 
-BOOTSTRAP INSTRUCTIONS
+```bash
+git clone https://github.com/sallylynne/dog-breed-explorer.git
+cd dog-breed-explorer
+```
 
-1. Clone the Repo:
-   
-   `git clone https://github.com/sallylynne/sally-pyne.git`
-   
-   `cd my-dlt-project`
+### 2. Install Python dependencies
 
-3. Install Dependencies:
+```bash
+uv sync
+```
 
-    `uv sync`
+### 3. GCP credentials
 
-4. Authentication:
-Place your gcp-key.json in the root directory (this file is git-ignored).
+Place your `gcp-key.json` service account key in the project root (it is git-ignored):
 
-    `export GOOGLE_APPLICATION_CREDENTIALS="gcp-key.json"`
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="gcp-key.json"
+```
 
-5. Run Ingestion:
-   
-    `uv run python dog_pipeline.py`
+### 4. Provision infrastructure
+
+```bash
+terraform init
+terraform apply
+```
+
+This creates the GCS bucket, BigQuery datasets (`bronze`, `analytics`), Cloud Run Job, and Cloud Scheduler trigger.
+
+### 5. Build and push the ingestion image
+
+```bash
+gcloud builds submit \
+  --config cloudbuild.yaml \
+  --substitutions _COMMIT_SHA=local \
+  --project sally-pyne-2026 \
+  .
+```
+
+### 6. Run the ingestion pipeline (ad-hoc)
+
+```bash
+uv run python dog_pipeline.py
+```
+
+Or trigger the Cloud Run Job directly:
+
+```bash
+gcloud run jobs execute dog-ingestion-job --region us-central1
+```
+
+### 7. Run dbt transformations (local dev)
+
+```bash
+cd dog_transformations
+uv run dbt run
+uv run dbt test
+```
+
+Requires `~/.dbt/profiles.yml` to be configured with a `dog_transformations` profile pointing to your `gcp-key.json`.
+
+---
+
+## CI/CD (GitHub Actions)
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | Pull request → `main` | Runs `dbt run` + `dbt test` in a throwaway BigQuery dataset (`dbt_ci_pr<N>`), then cleans it up |
+| `cd.yml` | Push to `main` | Builds + pushes Docker image via Cloud Build, updates the Cloud Run Job, runs `dbt run/test --target prod` |
+
+### Required GitHub secret
+
+Add a secret named **`GCP_SA_KEY`** in **Settings → Secrets and variables → Actions**:
+
+- Value: the full JSON contents of `gcp-key.json`
+
+This is the only manual step required after cloning the repo.
+
+---
+
+## Service Account Roles
+
+`data-pipeline-runner@sally-pyne-2026.iam.gserviceaccount.com` holds the following roles:
+
+| Role | Purpose |
+|---|---|
+| `roles/storage.objectAdmin` | Read/write GCS staging bucket |
+| `roles/bigquery.dataEditor` | Materialize tables in Bronze and Analytics |
+| `roles/bigquery.jobUser` | Execute BigQuery compute jobs |
+| `roles/run.invoker` | Allow Cloud Scheduler to trigger the Cloud Run Job |
+| `roles/cloudbuild.builds.editor` | Submit Cloud Build jobs (CI/CD image builds) |
+| `roles/run.developer` | Update Cloud Run Job after image push |
+| `roles/secretmanager.secretAccessor` | Read the Dog API key from Secret Manager |

@@ -1,0 +1,25 @@
+# cloudbuild.yaml
+# Called from the CD GitHub Actions workflow via:
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions _COMMIT_SHA=$GITHUB_SHA .
+#
+# Builds the ingestion pipeline image and pushes two tags:
+#   :latest          — what the Cloud Run Job is updated to track
+#   :<commit-sha>    — immutable tag for rollback / audit trail
+
+substitutions:
+  _COMMIT_SHA: local   # default for ad-hoc manual submissions
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-deploy/dog-ingestion-job:$_COMMIT_SHA
+      - -t
+      - us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-deploy/dog-ingestion-job:latest
+      - .
+
+images:
+  - us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-deploy/dog-ingestion-job:$_COMMIT_SHA
+  - us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-deploy/dog-ingestion-job:latest
