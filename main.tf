@@ -23,7 +23,14 @@ location   = "US"
 delete_contents_on_destroy = true
 }
 
-# 3. BigQuery Dataset for Gold (Analytics) Data
+# 3. BigQuery Dataset for Silver (Staging) Data
+resource "google_bigquery_dataset" "silver" {
+dataset_id = "silver"
+location   = "US"
+delete_contents_on_destroy = true
+}
+
+# 4. BigQuery Dataset for Gold (Marts) Data
 resource "google_bigquery_dataset" "gold" {
 dataset_id = "gold"
 location   = "US"

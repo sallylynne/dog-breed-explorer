@@ -5,6 +5,7 @@ secrets.toml
 
 # GCP credentials — never commit service account keys
 gcp-key.json
+submission-viewer-key.json
 *.json.key
 
 # Terraform state and local cache — contains sensitive values
