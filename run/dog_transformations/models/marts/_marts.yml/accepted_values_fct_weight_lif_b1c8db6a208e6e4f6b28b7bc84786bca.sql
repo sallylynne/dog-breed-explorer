@@ -16,7 +16,7 @@ with all_values as (
         life_span_category as value_field,
         count(*) as n_records
 
-    from `sally-pyne-2026`.`gold`.`fact_weight_life_span`
+    from `sally-pyne-2026`.`gold`.`fct_weight_life_span`
     group by life_span_category
 
 )

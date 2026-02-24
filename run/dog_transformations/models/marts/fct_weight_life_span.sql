@@ -2,7 +2,7 @@
   
     
 
-    create or replace table `sally-pyne-2026`.`gold`.`fact_weight_life_span`
+    create or replace table `sally-pyne-2026`.`gold`.`fct_weight_life_span`
       
     
     
