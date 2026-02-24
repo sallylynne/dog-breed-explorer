@@ -93,16 +93,14 @@ terraform init
 terraform apply
 ```
 
-This creates the GCS bucket, BigQuery datasets (`bronze`, `gold`), Cloud Run Job, and Cloud Scheduler trigger.
+This creates the GCS bucket, BigQuery datasets (`bronze`, `silver`, `gold`), Cloud Run Job, Cloud Scheduler trigger, and Cloud Monitoring alerting resources.
 
 ### 5. Build and push the ingestion image
 
 ```bash
-gcloud builds submit \
-  --config cloudbuild.yaml \
-  --substitutions _COMMIT_SHA=local \
-  --project sally-pyne-2026 \
-  .
+gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+docker build -t us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-deploy/dog-ingestion-job:latest .
+docker push us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-deploy/dog-ingestion-job:latest
 ```
 
 ### 6. Run the ingestion pipeline (ad-hoc)
@@ -134,7 +132,7 @@ Requires `~/.dbt/profiles.yml` to be configured with a `dog_transformations` pro
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | Pull request → `main` | Runs `dbt run` + `dbt test` in a throwaway BigQuery dataset (`dbt_ci_pr<N>`), then cleans it up |
-| `cd.yml` | Push to `main` | Builds + pushes Docker image via Cloud Build, updates the Cloud Run Job, runs `dbt run/test --target prod` |
+| `cd.yml` | Push to `main` | Builds + pushes Docker image via GitHub Actions, updates the Cloud Run Job, runs `dbt run/test --target prod`, publishes dbt docs to GitHub Pages |
 
 ### Required GitHub secret
 
@@ -171,7 +169,7 @@ Enriching the dataset with adoption availability and regional popularity data wo
 | Role | Purpose |
 |---|---|
 | `roles/storage.objectAdmin` | Read/write GCS staging bucket |
-| `roles/bigquery.dataEditor` | Materialize tables in Bronze and Analytics |
+| `roles/bigquery.dataEditor` | Read/write tables and views across Bronze, Silver, and Gold datasets |
 | `roles/bigquery.jobUser` | Execute BigQuery compute jobs |
 | `roles/run.invoker` | Allow Cloud Scheduler to trigger the Cloud Run Job |
 | `roles/artifactregistry.writer` | Push Docker images to Artifact Registry |
