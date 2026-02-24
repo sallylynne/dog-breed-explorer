@@ -16,8 +16,25 @@
 
 ## Architecture Overview
 
-```
-Dog API → dlt pipeline → GCS (raw) → BigQuery bronze → dbt → BigQuery silver / gold
+```mermaid
+flowchart LR
+    subgraph Orchestration
+        CS[Cloud Scheduler] -->|02:00 UTC| CR[Cloud Run Job]
+        SM[Secret Manager] -->|API key| CR
+    end
+
+    subgraph Ingestion
+        CR -->|fetch| API[Dog API]
+        CR -->|stage raw JSON| GCS[GCS Bucket]
+        GCS -->|schema-on-read| BQ_B[BigQuery bronze]
+    end
+
+    subgraph Transformation
+        BQ_B -->|dbt staging| BQ_S[BigQuery silver]
+        BQ_S -->|dbt marts| BQ_G[BigQuery gold]
+    end
+
+    BQ_G --> LS[Looker Studio]
 ```
 
 | Layer | GCP Resource | dbt Dataset (dev) | dbt Dataset (prod) |
