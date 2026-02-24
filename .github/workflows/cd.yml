@@ -61,8 +61,24 @@ jobs:
         run: dbt run --profiles-dir . --target prod
 
       - name: dbt test (prod)
+        id: dbt-test
+        continue-on-error: true
         working-directory: dog_transformations
         run: dbt test --profiles-dir . --target prod
+
+      # Write a structured ERROR entry to Cloud Logging if any dbt test fails.
+      # A log-based metric and alerting policy in Terraform fire on this entry.
+      - name: Log dbt test failure to Cloud Monitoring
+        if: steps.dbt-test.outcome == 'failure'
+        run: |
+          gcloud logging write dbt-test-failures \
+            '{"severity":"ERROR","message":"dbt test failed in prod","pipeline":"dog-breed-explorer","commit":"${{ github.sha }}"}' \
+            --severity=ERROR \
+            --project=${{ env.GCP_PROJECT }}
+
+      - name: Fail if dbt tests failed
+        if: steps.dbt-test.outcome == 'failure'
+        run: exit 1
 
       # Generate dbt docs and publish to GitHub Pages
       - name: Generate dbt docs

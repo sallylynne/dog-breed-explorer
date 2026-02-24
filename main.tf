@@ -163,3 +163,54 @@ oidc_token {
 }
 }
 }
+
+# ── Observability (Task 5) ────────────────────────────────────────────────────
+
+# Log-based metric: counts ERROR entries written to the dbt-test-failures log.
+# The CD workflow writes here whenever `dbt test` fails in prod.
+resource "google_logging_metric" "dbt_test_failure" {
+  name   = "dbt_test_failure_count"
+  filter = "logName=\"projects/sally-pyne-2026/logs/dbt-test-failures\" AND severity=ERROR"
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+  }
+}
+
+# Email notification channel — GCP will send a verification email on first apply.
+# Click the link in that email to activate the channel before alerts will fire.
+resource "google_monitoring_notification_channel" "email" {
+  display_name = "Data Engineering Alerts"
+  type         = "email"
+  labels = {
+    email_address = "sally.isaacoff@gmail.com"
+  }
+}
+
+# Alerting policy: fires if the dbt test failure metric count exceeds 0
+# within a 5-minute window.
+resource "google_monitoring_alert_policy" "dbt_test_failure_alert" {
+  display_name = "dbt prod test failure"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "dbt test failure count > 0"
+    condition_threshold {
+      filter          = "metric.type=\"logging.googleapis.com/user/dbt_test_failure_count\" resource.type=\"global\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+      duration        = "0s"
+      aggregations {
+        alignment_period   = "300s"
+        per_series_aligner = "ALIGN_COUNT"
+      }
+    }
+  }
+
+  notification_channels = [google_monitoring_notification_channel.email.name]
+
+  documentation {
+    content = "A `dbt test` run failed in prod. Check the CD workflow logs for details."
+  }
+}
