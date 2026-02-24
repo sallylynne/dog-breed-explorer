@@ -32,7 +32,7 @@ models:
               config:
                 severity: warn
 
-  - name: fact_weight_life_span
+  - name: fct_weight_life_span
     description: >
       Analytical fact table per breed with parsed weight, height, and life span
       metrics plus derived flags for dashboard use.
