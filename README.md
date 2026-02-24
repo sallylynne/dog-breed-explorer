@@ -86,7 +86,20 @@ Place your `gcp-key.json` service account key in the project root (it is git-ign
 export GOOGLE_APPLICATION_CREDENTIALS="gcp-key.json"
 ```
 
-### 4. Provision infrastructure
+### 4. Create the Dog API secret
+
+Store your Dog API key in Secret Manager (Terraform references this secret; it must exist before `terraform apply`):
+
+```bash
+gcloud secrets create dog-api-key \
+  --replication-policy=automatic \
+  --project=sally-pyne-2026
+echo -n "YOUR_DOG_API_KEY" | gcloud secrets versions add dog-api-key --data-file=-
+```
+
+Get a free API key at https://thedogapi.com.
+
+### 5. Provision infrastructure
 
 ```bash
 terraform init
@@ -95,7 +108,7 @@ terraform apply
 
 This creates the GCS bucket, BigQuery datasets (`bronze`, `silver`, `gold`), Cloud Run Job, Cloud Scheduler trigger, and Cloud Monitoring alerting resources.
 
-### 5. Build and push the ingestion image
+### 6. Build and push the ingestion image
 
 ```bash
 gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
@@ -103,7 +116,7 @@ docker build -t us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-depl
 docker push us-central1-docker.pkg.dev/sally-pyne-2026/cloud-run-source-deploy/dog-ingestion-job:latest
 ```
 
-### 6. Run the ingestion pipeline (ad-hoc)
+### 7. Run the ingestion pipeline (ad-hoc)
 
 ```bash
 uv run python dog_pipeline.py
@@ -115,7 +128,7 @@ Or trigger the Cloud Run Job directly:
 gcloud run jobs execute dog-ingestion-job --region us-central1
 ```
 
-### 7. Run dbt transformations (local dev)
+### 8. Run dbt transformations (local dev)
 
 ```bash
 cd dog_transformations
